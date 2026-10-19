@@ -1,0 +1,428 @@
+require("L5")
+
+local CANVAS_W = 900
+local CANVAS_H = 600
+local landscape
+local lightning
+local lightningWait
+
+function setup()
+  size(CANVAS_W, CANVAS_H)
+  windowTitle("Last Light")
+  describe("A vivid city sunset above a parking lot, with layered clouds and occasional branching lightning.")
+  landscape = loadImage("urban-sunset.jpg")
+  lightningWait = random(150, 360)
+end
+
+function draw()
+  image(landscape, 0, 0, CANVAS_W, CANVAS_H)
+  drawLayeredClouds()
+  updateLightning()
+  drawLightning()
+  drawAfterglow()
+end
+
+function drawLayeredClouds()
+  drawCloudBank(150, 122, 1)
+  drawCloudBank(758, 182, 0.78)
+  drawCloudBank(390, 67, 0.55)
+end
+
+function drawCloudBank(x, y, cloudScale)
+  push()
+  translate(x, y)
+  scale(cloudScale)
+  noStroke()
+
+  fill(74, 62, 101, 70)
+  ellipse(0, 20, 216, 38)
+  ellipse(-68, 9, 88, 56)
+  ellipse(-20, -5, 100, 72)
+  ellipse(42, 2, 96, 68)
+  ellipse(84, 13, 68, 44)
+
+  fill(165, 92, 124, 54)
+  ellipse(0, 7, 190, 31)
+  ellipse(-55, -5, 76, 44)
+  ellipse(-8, -17, 79, 54)
+  ellipse(47, -10, 74, 49)
+
+  fill(255, 165, 147, 55)
+  ellipse(-13, -26, 66, 28)
+  ellipse(47, -18, 56, 24)
+  fill(255, 207, 169, 50)
+  ellipse(-36, -20, 42, 15)
+
+  pop()
+end
+
+function updateLightning()
+  if lightning then
+    lightning.age = lightning.age + 1
+    if lightning.age >= lightning.duration then
+      lightning = nil
+      lightningWait = random(150, 360)
+    end
+  elseif lightningWait > 0 then
+    lightningWait = lightningWait - 1
+  else
+    lightning = createLightning()
+  end
+end
+
+function createLightning()
+  local clouds = {
+    { x = 150, y = 122, scale = 1 },
+    { x = 758, y = 182, scale = 0.78 },
+    { x = 390, y = 67, scale = 0.55 }
+  }
+  local cloud = random(clouds)
+  local startX = cloud.x + random(-45, 45) * cloud.scale
+  local startY = cloud.y + 25 * cloud.scale
+  local endY = random(315, 405)
+  local segmentCount = math.ceil((endY - startY) / 30)
+  local points = { { x = startX, y = startY } }
+  local boltX = startX
+
+  for segment = 1, segmentCount - 1 do
+    boltX = boltX + random(-27, 27)
+    table.insert(points, {
+      x = boltX,
+      y = startY + (endY - startY) * segment / segmentCount
+    })
+  end
+
+  boltX = boltX + random(-14, 14)
+  table.insert(points, { x = boltX, y = endY })
+
+  local branch = {}
+  local branchStart = points[math.floor(#points / 2)]
+  local direction = random() < 0.5 and -1 or 1
+  local branchX = branchStart.x
+  for segment = 1, 3 do
+    branchX = branchX + direction * random(12, 25)
+    table.insert(branch, {
+      x = branchX,
+      y = branchStart.y + segment * 22
+    })
+  end
+
+  return {
+    points = points,
+    branch = branch,
+    age = 0,
+    duration = random(7, 12)
+  }
+end
+
+function drawLightning()
+  if not lightning then
+    return
+  end
+
+  local fade = 1 - lightning.age / lightning.duration
+  noStroke()
+  fill(205, 229, 255, 10 * fade)
+  rect(0, 0, CANVAS_W, CANVAS_H)
+
+  stroke(150, 211, 255, 55 * fade)
+  strokeWeight(7)
+  for index = 1, #lightning.points - 1 do
+    local point = lightning.points[index]
+    local nextPoint = lightning.points[index + 1]
+    line(point.x, point.y, nextPoint.x, nextPoint.y)
+  end
+  local branchStart = lightning.points[math.floor(#lightning.points / 2)]
+  local previousPoint = branchStart
+  for _, point in ipairs(lightning.branch) do
+    line(previousPoint.x, previousPoint.y, point.x, point.y)
+    previousPoint = point
+  end
+
+  stroke(235, 248, 255, 220 * fade)
+  strokeWeight(2)
+  for index = 1, #lightning.points - 1 do
+    local point = lightning.points[index]
+    local nextPoint = lightning.points[index + 1]
+    line(point.x, point.y, nextPoint.x, nextPoint.y)
+  end
+  previousPoint = branchStart
+  for _, point in ipairs(lightning.branch) do
+    line(previousPoint.x, previousPoint.y, point.x, point.y)
+    previousPoint = point
+  end
+end
+
+function drawAfterglow()
+  noStroke()
+
+  -- Layered coral and gold halos intensify the brightest streak of sunset.
+  fill(255, 99, 105, 24)
+  ellipse(622, 273, 244, 118)
+
+  fill(255, 143, 103, 34)
+  ellipse(620, 270, 158, 70)
+
+  fill(255, 207, 145, 185)
+  circle(620, 270, 18)
+
+  noFill()
+  stroke(255, 229, 188, 160)
+  strokeWeight(1.5)
+  ellipse(620, 270, 48, 48)
+
+  -- Fine strokes echo the cloud band and guide the eye toward the horizon.
+  stroke(255, 189, 139, 115)
+  strokeWeight(2)
+  line(465, 253, 698, 253)
+  stroke(255, 119, 111, 105)
+  strokeWeight(3)
+  line(514, 286, 719, 286)
+  stroke(255, 227, 184, 95)
+  strokeWeight(1)
+  line(571, 304, 755, 304)
+
+  -- The roadside lamps become small warm anchors against the dusk.
+  noStroke()
+  fill(255, 174, 105, 38)
+  ellipse(19, 306, 56, 56)
+  fill(255, 222, 159, 190)
+  circle(18, 303, 9)
+  fill(255, 222, 159, 155)
+  circle(37, 310, 8)
+  noFill()
+  stroke(255, 213, 156, 115)
+  strokeWeight(1)
+  ellipse(19, 306, 34, 34)
+
+  -- Cool pavement glints contrast with the warmth above the silhouetted lot.
+  stroke(130, 201, 220, 68)
+  strokeWeight(2)
+  line(68, 537, 222, 533)
+  stroke(255, 174, 126, 75)
+  strokeWeight(3)
+  line(279, 556, 399, 551)
+  stroke(204, 177, 221, 58)
+  strokeWeight(2)
+  line(705, 528, 843, 533)
+
+  noStroke()
+  fill(255, 142, 117, 36)
+  ellipse(334, 574, 180, 13)
+  fill(108, 194, 214, 35)
+  ellipse(745, 573, 146, 10)
+end
+require("L5")
+
+local CANVAS_W = 900
+local CANVAS_H = 600
+local landscape
+local lightning
+local lightningWait
+
+function setup()
+  size(CANVAS_W, CANVAS_H)
+  windowTitle("Last Light")
+  describe("A vivid city sunset above a parking lot, with layered clouds and occasional branching lightning.")
+  landscape = loadImage("urban-sunset.jpg")
+  lightningWait = random(150, 360)
+end
+
+function draw()
+  image(landscape, 0, 0, CANVAS_W, CANVAS_H)
+  drawLayeredClouds()
+  updateLightning()
+  drawLightning()
+  drawAfterglow()
+end
+
+function drawLayeredClouds()
+  drawCloudBank(150, 122, 1)
+  drawCloudBank(758, 182, 0.78)
+  drawCloudBank(390, 67, 0.55)
+end
+
+function drawCloudBank(x, y, cloudScale)
+  push()
+  translate(x, y)
+  scale(cloudScale)
+  noStroke()
+
+  fill(74, 62, 101, 70)
+  ellipse(0, 20, 216, 38)
+  ellipse(-68, 9, 88, 56)
+  ellipse(-20, -5, 100, 72)
+  ellipse(42, 2, 96, 68)
+  ellipse(84, 13, 68, 44)
+
+  fill(165, 92, 124, 54)
+  ellipse(0, 7, 190, 31)
+  ellipse(-55, -5, 76, 44)
+  ellipse(-8, -17, 79, 54)
+  ellipse(47, -10, 74, 49)
+
+  fill(255, 165, 147, 55)
+  ellipse(-13, -26, 66, 28)
+  ellipse(47, -18, 56, 24)
+  fill(255, 207, 169, 50)
+  ellipse(-36, -20, 42, 15)
+
+  pop()
+end
+
+function updateLightning()
+  if lightning then
+    lightning.age = lightning.age + 1
+    if lightning.age >= lightning.duration then
+      lightning = nil
+      lightningWait = random(150, 360)
+    end
+  elseif lightningWait > 0 then
+    lightningWait = lightningWait - 1
+  else
+    lightning = createLightning()
+  end
+end
+
+function createLightning()
+  local clouds = {
+    { x = 150, y = 122, scale = 1 },
+    { x = 758, y = 182, scale = 0.78 },
+    { x = 390, y = 67, scale = 0.55 }
+  }
+  local cloud = random(clouds)
+  local startX = cloud.x + random(-45, 45) * cloud.scale
+  local startY = cloud.y + 25 * cloud.scale
+  local endY = random(315, 405)
+  local segmentCount = math.ceil((endY - startY) / 30)
+  local points = { { x = startX, y = startY } }
+  local boltX = startX
+
+  for segment = 1, segmentCount - 1 do
+    boltX = boltX + random(-27, 27)
+    table.insert(points, {
+      x = boltX,
+      y = startY + (endY - startY) * segment / segmentCount
+    })
+  end
+
+  boltX = boltX + random(-14, 14)
+  table.insert(points, { x = boltX, y = endY })
+
+  local branch = {}
+  local branchStart = points[math.floor(#points / 2)]
+  local direction = random() < 0.5 and -1 or 1
+  local branchX = branchStart.x
+  for segment = 1, 3 do
+    branchX = branchX + direction * random(12, 25)
+    table.insert(branch, {
+      x = branchX,
+      y = branchStart.y + segment * 22
+    })
+  end
+
+  return {
+    points = points,
+    branch = branch,
+    age = 0,
+    duration = random(7, 12)
+  }
+end
+
+function drawLightning()
+  if not lightning then
+    return
+  end
+
+  local fade = 1 - lightning.age / lightning.duration
+  noStroke()
+  fill(205, 229, 255, 10 * fade)
+  rect(0, 0, CANVAS_W, CANVAS_H)
+
+  stroke(150, 211, 255, 55 * fade)
+  strokeWeight(7)
+  for index = 1, #lightning.points - 1 do
+    local point = lightning.points[index]
+    local nextPoint = lightning.points[index + 1]
+    line(point.x, point.y, nextPoint.x, nextPoint.y)
+  end
+  local branchStart = lightning.points[math.floor(#lightning.points / 2)]
+  local previousPoint = branchStart
+  for _, point in ipairs(lightning.branch) do
+    line(previousPoint.x, previousPoint.y, point.x, point.y)
+    previousPoint = point
+  end
+
+  stroke(235, 248, 255, 220 * fade)
+  strokeWeight(2)
+  for index = 1, #lightning.points - 1 do
+    local point = lightning.points[index]
+    local nextPoint = lightning.points[index + 1]
+    line(point.x, point.y, nextPoint.x, nextPoint.y)
+  end
+  previousPoint = branchStart
+  for _, point in ipairs(lightning.branch) do
+    line(previousPoint.x, previousPoint.y, point.x, point.y)
+    previousPoint = point
+  end
+end
+
+function drawAfterglow()
+  noStroke()
+
+  -- Layered coral and gold halos intensify the brightest streak of sunset.
+  fill(255, 99, 105, 24)
+  ellipse(622, 273, 244, 118)
+
+  fill(255, 143, 103, 34)
+  ellipse(620, 270, 158, 70)
+
+  fill(255, 207, 145, 185)
+  circle(620, 270, 18)
+
+  noFill()
+  stroke(255, 229, 188, 160)
+  strokeWeight(1.5)
+  ellipse(620, 270, 48, 48)
+
+  -- Fine strokes echo the cloud band and guide the eye toward the horizon.
+  stroke(255, 189, 139, 115)
+  strokeWeight(2)
+  line(465, 253, 698, 253)
+  stroke(255, 119, 111, 105)
+  strokeWeight(3)
+  line(514, 286, 719, 286)
+  stroke(255, 227, 184, 95)
+  strokeWeight(1)
+  line(571, 304, 755, 304)
+
+  -- The roadside lamps become small warm anchors against the dusk.
+  noStroke()
+  fill(255, 174, 105, 38)
+  ellipse(19, 306, 56, 56)
+  fill(255, 222, 159, 190)
+  circle(18, 303, 9)
+  fill(255, 222, 159, 155)
+  circle(37, 310, 8)
+  noFill()
+  stroke(255, 213, 156, 115)
+  strokeWeight(1)
+  ellipse(19, 306, 34, 34)
+
+  -- Cool pavement glints contrast with the warmth above the silhouetted lot.
+  stroke(130, 201, 220, 68)
+  strokeWeight(2)
+  line(68, 537, 222, 533)
+  stroke(255, 174, 126, 75)
+  strokeWeight(3)
+  line(279, 556, 399, 551)
+  stroke(204, 177, 221, 58)
+  strokeWeight(2)
+  line(705, 528, 843, 533)
+
+  noStroke()
+  fill(255, 142, 117, 36)
+  ellipse(334, 574, 180, 13)
+  fill(108, 194, 214, 35)
+  ellipse(745, 573, 146, 10)
+end
