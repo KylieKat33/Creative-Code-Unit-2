@@ -1,0 +1,208 @@
+-- Homework 8: Arrays and Functions
+-- A random "origin story" generator for a supernatural born under a night sky.
+-- Click the mouse to generate a new story. Press "s" to save a screenshot.
+
+require("L5")
+
+-- ---------------------------------------------------------------
+-- PART 1: THE LISTS
+local witnesses = {
+  "A lonely stargazer",
+  "Two sisters",
+  "An old night-shift nurse",
+  "A kid on a bicycle",
+  "A retired astronomer",
+  "A baker",
+}
+
+local places = {
+  "on a rooftop",
+  "in a quiet cornfield",
+  "inside a lighthouse",
+  "beside a frozen lake",
+  "outside a closed diner",
+  "on a mountain trail",
+}
+
+-- The order of this list matters: drawEvent() uses the number to pick a picture.
+local events = {
+  "a meteor shower",
+  "a total lunar eclipse",
+  "a rogue comet",
+  "a blood moon",
+  "a rare planetary alignment",
+  "a solar flare",
+}
+
+local abilities = {
+  "hear the thoughts of animals",
+  "bend light around themselves",
+  "mend broken things by touch",
+  "see one minute into the future",
+  "call a storm with a whisper",
+  "never get lost again",
+}
+
+local catches = {
+  "but only after dark",
+  "but every use costs a memory",
+  "but only when no one is watching",
+  "but it fades a little each full moon",
+  "but they can never tell anyone",
+}
+
+-- ---------------------------------------------------------------
+-- COLORS
+local NIGHT = "#14213D"
+local CREAM = "#FFF4DC"
+local GOLD  = "#FFB511"
+local RED   = "#F15060"
+local TEAL  = "#00838A"
+local PINK  = "#FF48B0"
+
+-- ---------------------------------------------------------------
+function setup()
+  size(800, 600)
+  windowTitle("Homework 8: Supernatural Origin Generator")
+  describe("A random story about a supernatural born under an astronomical event, with a picture of the event above it.")
+  textGenerator()
+end
+
+-- The draw loop stays empty. Everything is made in textGenerator().
+function draw()
+end
+
+function mousePressed()
+  textGenerator()
+end
+
+function keyPressed()
+  if key == "s" then
+    save("hw8.png")
+  end
+end
+
+-- ---------------------------------------------------------------
+-- PART 2: THE GENERATOR
+function textGenerator()
+  -- pick one item from each list
+  local witness = random(witnesses)
+  local place   = random(places)
+  local ability = random(abilities)
+  local catch   = random(catches)
+
+  -- the event is picked by number so we know which picture to draw
+  local eventNumber = math.floor(random(1, #events + 1))
+  local event = events[eventNumber]
+
+  local caseNumber = math.floor(random(1000, 9999))
+
+  -- the sky
+  background(NIGHT)
+  drawStars()
+  drawEvent(eventNumber, 400, 150)
+
+  -- the words
+  noStroke()
+
+  -- short single lines are centered on the canvas
+  textAlign(CENTER, TOP)
+  fill(GOLD)
+  textSize(18)
+  text("ORIGIN #" .. caseNumber, width / 2, 280)
+
+  -- the story is left-aligned in a box so it can wrap onto several lines
+  textAlign(LEFT, TOP)
+  fill(CREAM)
+  textSize(26)
+  text(witness .. " stood " .. place .. " when " .. event .. " filled the sky.", 100, 330, 600)
+  text("By morning, they could " .. ability .. ", " .. catch .. ".", 100, 440, 600)
+
+  textAlign(CENTER, TOP)
+  fill(PINK)
+  textSize(16)
+  text("click for a new origin", width / 2, 560)
+end
+
+-- A scatter of random stars
+function drawStars()
+  noStroke()
+  for i = 1, 90 do
+    local x = random(width)
+    local y = random(height)
+    local d = random(1, 3.5)
+    fill(255, 255, 255, random(80, 255))
+    circle(x, y, d)
+  end
+end
+
+-- One small picture for each kind of event
+function drawEvent(n, cx, cy)
+  if n == 1 then
+    -- meteor shower: a handful of streaks, all slanting the same way
+    strokeWeight(3)
+    for i = 1, 7 do
+      local x = cx + random(-160, 160)
+      local y = cy + random(-70, 50)
+      local len = random(40, 90)
+      stroke(CREAM)
+      line(x, y, x - len, y + len * 0.5)
+      noStroke()
+      fill(GOLD)
+      circle(x, y, 7)
+    end
+    noStroke()
+
+  elseif n == 2 then
+    -- total lunar eclipse: a moon with a shadow sliding over it
+    noStroke()
+    fill(CREAM)
+    circle(cx, cy, 120)
+    fill(NIGHT)
+    circle(cx + random(-35, 35), cy, 120)
+
+  elseif n == 3 then
+    -- rogue comet: a bright head with a tail of fading dots
+    noStroke()
+    for i = 1, 24 do
+      fill(CREAM, 255 - i * 10)
+      circle(cx - 30 - i * 7, cy + 20 + i * 2.5, 28 - i)
+    end
+    fill(GOLD)
+    circle(cx - 30, cy + 20, 30)
+
+  elseif n == 4 then
+    -- blood moon: a red moon with a few craters
+    noStroke()
+    fill(RED)
+    circle(cx, cy, 120)
+    fill(255, 255, 255, 40)
+    for i = 1, 5 do
+      circle(cx + random(-35, 35), cy + random(-35, 35), random(10, 22))
+    end
+
+  elseif n == 5 then
+    -- planetary alignment: a row of planets in different sizes and colors
+    noStroke()
+    local planetColors = { CREAM, GOLD, TEAL, PINK, RED }
+    for i = 1, 5 do
+      fill(planetColors[i])
+      circle(cx - 160 + (i - 1) * 80, cy, random(20, 55))
+    end
+
+  else
+    -- solar flare: a sun with rays of random length
+    noStroke()
+    for i = 0, 15 do
+      local a = i * TWO_PI / 16
+      local r1 = 55
+      local r2 = random(75, 115)
+      stroke(GOLD)
+      strokeWeight(4)
+      line(cx + r1 * math.cos(a), cy + r1 * math.sin(a), cx + r2 * math.cos(a), cy + r2 * math.sin(a))
+    end
+    noStroke()
+    fill(GOLD)
+    circle(cx, cy, 100)
+  end
+end
